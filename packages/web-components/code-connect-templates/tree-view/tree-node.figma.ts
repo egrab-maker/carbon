@@ -25,16 +25,29 @@ const isExpanded = instance.getEnum('Open', {
   True: true,
 });
 
-// Branch nodes can be expanded (is-expanded is meaningful); leaf nodes cannot.
+// Branch nodes can be expanded (is-expanded is meaningful) and can contain
+// nested tree nodes; leaf nodes cannot.
 const isBranch = instance.getEnum('Node', {
   Branch: true,
   Leaf: false,
 });
 
+// Recursively resolve nested tree nodes so each branch renders its own
+// children via the (cds-tree-node) template, mirroring how the tree view
+// composes them.
+const children = isBranch
+  ? instance
+      .findConnectedInstances((node) => node.hasCodeConnect())
+      .map((child) => child.executeTemplate().example)
+  : [];
+
 export default {
-  example: isBranch
-    ? figma.code`<cds-tree-node label="${label}"${disabled ? ' disabled' : ''}${isExpanded ? ' is-expanded' : ''}></cds-tree-node>`
-    : figma.code`<cds-tree-node label="${label}"${disabled ? ' disabled' : ''}></cds-tree-node>`,
+  example:
+    isBranch && children.length
+      ? figma.code`<cds-tree-node label="${label}"${disabled ? ' disabled' : ''}${isExpanded ? ' is-expanded' : ''}>
+  ${children}
+</cds-tree-node>`
+      : figma.code`<cds-tree-node label="${label}"${disabled ? ' disabled' : ''}${isBranch && isExpanded ? ' is-expanded' : ''}></cds-tree-node>`,
   imports: ["import '@carbon/web-components/es/components/tree-view/index.js'"],
   id: 'cds-tree-node',
   metadata: {

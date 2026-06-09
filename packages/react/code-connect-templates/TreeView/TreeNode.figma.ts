@@ -24,16 +24,28 @@ const isExpanded = instance.getEnum('Open', {
   True: true,
 });
 
-// Branch nodes can be expanded (isExpanded is meaningful); leaf nodes cannot.
+// Branch nodes can be expanded (isExpanded is meaningful) and can contain
+// nested tree nodes; leaf nodes cannot.
 const isBranch = instance.getEnum('Node', {
   Branch: true,
   Leaf: false,
 });
 
+// Recursively resolve nested tree nodes so each branch renders its own
+// children via the (tree-node) template, mirroring how TreeView composes them.
+const children = isBranch
+  ? instance
+      .findConnectedInstances((node) => node.hasCodeConnect())
+      .map((child) => child.executeTemplate().example)
+  : [];
+
 export default {
-  example: isBranch
-    ? figma.code`<TreeNode label="${label}"${disabled ? ' disabled' : ''}${isExpanded ? ' isExpanded' : ''} />`
-    : figma.code`<TreeNode label="${label}"${disabled ? ' disabled' : ''} />`,
+  example:
+    isBranch && children.length
+      ? figma.code`<TreeNode label="${label}"${disabled ? ' disabled' : ''}${isExpanded ? ' isExpanded' : ''}>
+  ${children}
+</TreeNode>`
+      : figma.code`<TreeNode label="${label}"${disabled ? ' disabled' : ''}${isBranch && isExpanded ? ' isExpanded' : ''} />`,
   imports: ['import { TreeNode } from "@carbon/react"'],
   id: 'tree-node',
   metadata: {
